@@ -8,6 +8,17 @@ function $(sel, raiz) { return (raiz || document).querySelector(sel); }
 function $$(sel, raiz) { return Array.prototype.slice.call((raiz || document).querySelectorAll(sel)); }
 function porId(id) { return document.getElementById(id); }
 
+/* Textarea que crece con lo que se escribe, sin la manija para
+   arrastrar a mano (ver textarea.campo-input{resize:none} en
+   admin.css). Se llama en el oninput del campo y una vez al
+   abrirlo, para que ya arranque con la altura justa si venía con
+   texto cargado. */
+function ajustarAlturaTextarea(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
 /* ── Escapado: TODO lo que venga de la base pasa por acá ─── */
 function esc(v) {
   if (v === null || v === undefined) return '';

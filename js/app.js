@@ -15,6 +15,12 @@ function pintarMarca(destino) {
     '</div>';
 }
 
+/* Versión chica para la barra de arriba: solo el logo y el
+   nombre, sin el subtítulo — ahí ya no hay tanto lugar. */
+function pintarMarcaChica(destino) {
+  destino.innerHTML = '<img src="' + LOGO_INTENCIONAL + '" alt=""/><span class="appbar-nombre">Catálogo</span>';
+}
+
 /* ── Modo oscuro ───────────────────────────────────────────────
    Un interruptor simple (no un menú con "auto/claro/oscuro"): un
    toque alterna entre los dos. Arranca seteado según el sistema
@@ -30,17 +36,15 @@ function alternarTemaAdmin() {
   guardarTema(temaEsOscuroAhora() ? 'claro' : 'oscuro');
   pintarBotonesTema();
 }
-function botonTemaHTML(compacto) {
+function botonTemaHTML() {
   var oscuro = temaEsOscuroAhora();
-  return '<button class="' + (compacto ? 'btn btn-fantasma' : 'tema-switch') + '" style="' + (compacto ? 'padding:6px' : '') + '" ' +
-    'onclick="alternarTemaAdmin()" aria-label="Cambiar a modo ' + (oscuro ? 'claro' : 'oscuro') + '" title="Modo ' + (oscuro ? 'claro' : 'oscuro') + '">' +
-    '<span class="tema-switch-ic">' + ic(oscuro ? 'sun' : 'moon', compacto ? 18 : 15) + '</span>' +
-    (compacto ? '' : '<span>Modo ' + (oscuro ? 'claro' : 'oscuro') + '</span>') +
+  return '<button class="btn btn-fantasma" onclick="alternarTemaAdmin()" ' +
+    'aria-label="Cambiar a modo ' + (oscuro ? 'claro' : 'oscuro') + '" title="Modo ' + (oscuro ? 'claro' : 'oscuro') + '">' +
+    ic(oscuro ? 'sun' : 'moon', 18) +
   '</button>';
 }
 function pintarBotonesTema() {
-  var lat = porId('tema-boton-lateral'); if (lat) lat.innerHTML = botonTemaHTML(false);
-  var top = porId('tema-boton-topbar'); if (top) top.innerHTML = botonTemaHTML(true);
+  var top = porId('tema-boton-topbar'); if (top) top.innerHTML = botonTemaHTML();
 }
 
 /* ── Pantalla de ingreso ─────────────────────────────────────
@@ -90,33 +94,28 @@ async function salir() {
   pantallaIngreso();
 }
 
-/* ── Armazón ─────────────────────────────────────────────── */
+/* ── Armazón ─────────────────────────────────────────────────
+   Una sola barra de arriba (igual en PC y en celular) en vez de
+   la barra lateral + barra de abajo de la app grande: con solo
+   dos secciones, una barra lateral entera se ve vacía y rara.
+   Las pastillas de navegación son las mismas .nav-item de
+   siempre, así que el resto del sistema (marcarMenu, etc.) no
+   se entera del cambio. */
 function arrancarApp() {
   porId('app').innerHTML =
-    '<div class="shell">' +
-      '<aside class="barra-lateral">' +
-        '<div class="marca" id="marca-lateral"></div>' +
-        '<nav class="nav" id="nav"></nav>' +
-        '<div class="pie-lateral">' +
-          '<div id="tema-boton-lateral" style="margin-bottom:8px">' + botonTemaHTML(false) + '</div>' +
-          '<button class="btn btn-fantasma" style="padding:6px 0" onclick="salir()">' + ic('undo', 15) + ' Cerrar sesión</button>' +
-        '</div>' +
-      '</aside>' +
-      '<main class="contenido">' +
-        '<div class="topbar">' +
-          '<img src="' + LOGO_INTENCIONAL + '" style="width:26px;height:26px;object-fit:contain" alt=""/>' +
-          '<div class="marca-nombre">Catálogo</div>' +
-          '<span id="tema-boton-topbar" style="margin-left:auto">' + botonTemaHTML(true) + '</span>' +
-          '<a class="btn btn-fantasma" style="padding:6px" href="' + URL_CATALOGO_PUBLICO + '" target="_blank" rel="noopener" aria-label="Ver el catálogo">' + ic('eye', 18) + '</a>' +
-        '</div>' +
-        '<div id="contenido"></div>' +
-      '</main>' +
-      '<nav class="barra-inferior" id="barra-inferior"></nav>' +
-    '</div>';
+    '<header class="appbar">' +
+      '<div class="appbar-marca" id="marca-appbar"></div>' +
+      '<nav class="appbar-nav" id="nav"></nav>' +
+      '<div class="appbar-acciones">' +
+        '<span id="tema-boton-topbar">' + botonTemaHTML() + '</span>' +
+        '<a class="btn btn-fantasma" href="' + URL_CATALOGO_PUBLICO + '" target="_blank" rel="noopener" aria-label="Ver el catálogo" title="Ver el catálogo">' + ic('eye', 18) + '</a>' +
+        '<button class="btn btn-fantasma" onclick="salir()" aria-label="Cerrar sesión" title="Cerrar sesión">' + ic('undo', 18) + '</button>' +
+      '</div>' +
+    '</header>' +
+    '<main class="contenido"><div id="contenido"></div></main>';
 
-  pintarMarca(porId('marca-lateral'));
-  construirMenu();
-  construirBarraInferior();
+  pintarMarcaChica(porId('marca-appbar'));
+  construirNavPills();
   pintarRuta();
 }
 

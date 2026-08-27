@@ -127,8 +127,11 @@ function pintarListaColores() {
 function tarjetaColor(c) {
   var sinStock = (+c.stock || 0) <= 0;
   var imagen = c.imagen_url || c.imagen_una_url || '';
+  /* Si la foto no llega a cargar (link roto, se borró del hosting,
+     etc.) se esconde sola y queda el ícono de "sin imagen" en vez
+     de un rectángulo vacío feo — ver imagenRota() más abajo. */
   var media = imagen
-    ? '<img src="' + esc(imagen) + '" alt="" loading="lazy"/>'
+    ? '<img src="' + esc(imagen) + '" alt="" loading="lazy" onerror="imagenRota(this)"/>'
     : '<span class="sin-imagen">' + ic('image', 26) + '</span>';
 
   var precioHTML = '';
@@ -156,6 +159,14 @@ function tarjetaColor(c) {
       precioHTML +
     '</div>' +
   '</button>';
+}
+
+function imagenRota(img) {
+  img.classList.add('rota');
+  var span = document.createElement('span');
+  span.className = 'sin-imagen';
+  span.innerHTML = ic('image', 26);
+  img.insertAdjacentElement('afterend', span);
 }
 
 /* ── Alta / edición ─────────────────────────────────────────── */
@@ -313,19 +324,20 @@ function abrirFormColor(c) {
     subeimgHTML('una') +
 
     '<div class="campo"><div class="campo-etiq">Descripción (opcional)</div>' +
-      '<textarea class="campo-input" id="col-descripcion" rows="4" placeholder="Ej: Rojo intenso de alto brillo.&#10;Ideal para looks *clásicos*.">' + esc(c.descripcion || '') + '</textarea>' +
+      '<textarea class="campo-input" id="col-descripcion" rows="1" oninput="ajustarAlturaTextarea(this)" ' +
+        'placeholder="Ej: Rojo intenso de alto brillo.&#10;Ideal para looks *clásicos*.">' + esc(c.descripcion || '') + '</textarea>' +
       '<div class="campo-ayuda">Se ve en la ficha de detalle del catálogo, tal cual la escribas acá: respeta mayúsculas y renglones, y una palabra entre *asteriscos* sale en <strong>negrita</strong>. Si la dejás vacía, se arma una automática con la colección y el acabado.</div></div>' +
 
     '<div class="campo-etiq" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">Precio</div>' +
     '<div class="par-campos">' +
       '<div class="pc-1"><div class="campo-etiq">Precio de lista</div>' +
-        '<input class="campo-input" id="col-precio" type="number" min="0" step="0.01" value="' + esc(c.precio || '') + '" placeholder="0"/></div>' +
+        '<input class="campo-input" id="col-precio" type="number" inputmode="decimal" min="0" step="0.01" value="' + esc(c.precio || '') + '" placeholder="0"/></div>' +
       '<div class="pc-2"><div class="campo-etiq">Precio de oferta</div>' +
-        '<input class="campo-input" id="col-precio-oferta" type="number" min="0" step="0.01" value="' + esc(c.precio_oferta || '') + '" placeholder="0"/></div>' +
+        '<input class="campo-input" id="col-precio-oferta" type="number" inputmode="decimal" min="0" step="0.01" value="' + esc(c.precio_oferta || '') + '" placeholder="0"/></div>' +
     '</div>' +
     '<div class="par-campos">' +
       '<div class="pc-1"><div class="campo-etiq">Pack mínimo para la oferta (opcional)</div>' +
-        '<input class="campo-input" id="col-oferta-pack" type="number" min="0" step="1" value="' + esc(c.oferta_pack || '') + '" placeholder="Ej: 6"/>' +
+        '<input class="campo-input" id="col-oferta-pack" type="number" inputmode="numeric" min="0" step="1" value="' + esc(c.oferta_pack || '') + '" placeholder="Ej: 6"/>' +
         '<div class="campo-ayuda">Si lo dejás vacío, el precio de oferta vale por unidad, sin mínimo.</div></div>' +
       '<div class="pc-2"><div class="campo-etiq">Nota de la oferta (opcional)</div>' +
         '<input class="campo-input" id="col-oferta-nota" value="' + esc(c.oferta_nota || '') + '" placeholder="Ej: Por tiempo limitado"/></div>' +
@@ -340,6 +352,11 @@ function abrirFormColor(c) {
     '<button class="btn btn-primario btn-bloque" onclick="guardarColor(' + (esNuevo ? 'null' : c.id) + ')">Guardar</button>' +
     (esNuevo ? '' :
       '<button class="btn btn-peligro btn-bloque" style="margin-top:8px" onclick="confirmarBorrarColor(' + c.id + ')">Eliminar color</button>'));
+
+  /* La descripción arranca en 1 renglón (rows="1"); si el color ya
+     tenía texto cargado, esto la estira a su altura real apenas se
+     abre, en vez de mostrarla recortada hasta el primer tecleo. */
+  ajustarAlturaTextarea(porId('col-descripcion'));
 }
 
 /* El stock ya no se toca desde acá: se sincroniza solo desde
