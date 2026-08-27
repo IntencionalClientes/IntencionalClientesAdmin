@@ -185,3 +185,39 @@ async function borrar(tabla, valorPk) {
   invalidarCache(tabla);
   return r;
 }
+
+/* ── Imágenes (Supabase Storage) ────────────────────────────
+   Bucket público "colores-imagenes": cualquiera puede VER las
+   fotos (así las carga el catálogo sin login), pero solo alguien
+   autenticado —el equipo, con la sesión de esta página— puede
+   subir o reemplazar un archivo. Ver migración SQL:
+   agregar_storage_imagenes.sql */
+var BUCKET_IMAGENES = 'colores-imagenes';
+var TAMANO_MAX_IMAGEN = 5 * 1024 * 1024; // 5 MB
+
+async function subirImagen(archivo, prefijo) {
+  if (!archivo) throw new Error('No se eligió ningún archivo.');
+  if (!/^image\//.test(archivo.type)) throw new Error('Tiene que ser una imagen (jpg, png o webp).');
+  if (archivo.size > TAMANO_MAX_IMAGEN) throw new Error('La imagen pesa más de 5 MB — comprimila un poco antes de subirla.');
+
+  await asegurarSesion();
+  var ext = (/\.([a-z0-9]+)$/i.exec(archivo.name || '') || [, 'jpg'])[1].toLowerCase();
+  var ruta = (prefijo || 'color') + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+
+  var res = await fetch(SB_URL + '/storage/v1/object/' + BUCKET_IMAGENES + '/' + ruta, {
+    method: 'POST',
+    headers: {
+      apikey: SB_KEY,
+      Authorization: 'Bearer ' + tokenActual(),
+      'Content-Type': archivo.type || 'application/octet-stream',
+      'x-upsert': 'true'
+    },
+    body: archivo
+  });
+  if (!res.ok) {
+    var txt = await res.text(), d = {};
+    try { d = JSON.parse(txt); } catch (e) {}
+    throw new Error(d.message || d.error || 'No se pudo subir la imagen (' + res.status + ').');
+  }
+  return SB_URL + '/storage/v1/object/public/' + BUCKET_IMAGENES + '/' + ruta;
+}

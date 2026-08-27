@@ -45,4 +45,8 @@ function aplicarTema(t) {
   var tema = t || temaGuardado();
   document.documentElement.setAttribute('data-tema', tema);
 }
+function guardarTema(t) {
+  try { localStorage.setItem('catadmin_tema', t); } catch (e) {}
+  aplicarTema(t);
+}
 aplicarTema();

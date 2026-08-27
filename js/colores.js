@@ -6,6 +6,11 @@
    Compras + los movimientos de "Stock" (mismo cálculo, por
    código). Acá es puramente de lectura: es la única cosa que
    esta página usa de la app de Intencional.
+
+   La vista es una galería de fichas (como el catálogo impreso),
+   no una lista de filas: acá se administra, no se "mira" un
+   listado — por eso cada ficha ya muestra foto, swatch, precio y
+   estado de un vistazo, sin tener que entrar a cada una.
    ═══════════════════════════════════════════════════════════ */
 
 var _colores = [];
@@ -67,27 +72,20 @@ function pintarColores() {
     '<div class="grilla-stats" style="margin-bottom:16px">' +
       stat('palette', 'Colores cargados', String(_colores.length), plural(activos, 'activo'), 'var(--rose)') +
       (sinStock ? stat('alert', 'Sin stock', String(sinStock), plural(sinStock, 'color', 'colores'), 'var(--danger)') : '') +
-      (enOferta ? stat('tag', 'En oferta', String(enOferta), plural(enOferta, 'color', 'colores'), 'var(--warn)') : '') +
+      (enOferta ? stat('tag', 'En oferta', String(enOferta), plural(enOferta, 'color', 'colores'), 'var(--dorado)') : '') +
     '</div>' +
 
-    '<div class="tarjeta">' +
-      '<div class="tarjeta-cab">' + ic('search', 16) + ' Buscar y filtrar' +
-        '<span style="margin-left:auto"><span class="pin pin-neutro">' + plural(coloresFiltrados().length, 'color', 'colores') + '</span></span>' +
+    '<div class="colores-toolbar">' +
+      '<div class="buscador">' +
+        '<span class="ic-lupa">' + ic('search', 15) + '</span>' +
+        '<input class="campo-input" value="' + esc(_colorBusca) + '" placeholder="Buscar por código o nombre" ' +
+          'oninput="setBuscaColor(this.value)"/>' +
       '</div>' +
-      '<div class="tarjeta-cuerpo">' +
-        '<div class="buscador" style="margin-bottom:10px">' +
-          '<span class="ic-lupa">' + ic('search', 15) + '</span>' +
-          '<input class="campo-input" value="' + esc(_colorBusca) + '" placeholder="Código o nombre" ' +
-            'oninput="setBuscaColor(this.value)"/>' +
-        '</div>' +
-        '<div class="grilla-filtros" style="margin-bottom:12px">' +
-          selectFiltroColor('_colorColeccionFiltro', 'Todas las colecciones', valoresUnicos('coleccion')) +
-          selectFiltroColor('_colorAcabadoFiltro', 'Todos los acabados', valoresUnicos('acabado')) +
-        '</div>' +
-        '<label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px;cursor:pointer">' +
-          '<input type="checkbox" onchange="setSoloActivosColor(this.checked)"' + (_colorSoloActivos ? ' checked' : '') + '/> Solo activos' +
-        '</label>' +
-      '</div>' +
+      selectFiltroColor('_colorColeccionFiltro', 'Todas las colecciones', valoresUnicos('coleccion')) +
+      selectFiltroColor('_colorAcabadoFiltro', 'Todos los acabados', valoresUnicos('acabado')) +
+      '<label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap">' +
+        '<input type="checkbox" onchange="setSoloActivosColor(this.checked)"' + (_colorSoloActivos ? ' checked' : '') + '/> Solo activos' +
+      '</label>' +
     '</div>' +
 
     '<div id="colores-lista"></div>';
@@ -97,7 +95,7 @@ function pintarColores() {
 
 function selectFiltroColor(varName, placeholder, opciones) {
   var actual = window[varName];
-  return '<select class="campo-input" onchange="' + varName + '=this.value;pintarColores()">' +
+  return '<select class="campo-input" style="max-width:190px" onchange="' + varName + '=this.value;pintarColores()">' +
     '<option value="">' + esc(placeholder) + '</option>' +
     opciones.map(function (o) {
       return '<option value="' + esc(o) + '"' + (actual === o ? ' selected' : '') + '>' + esc(o) + '</option>';
@@ -105,13 +103,8 @@ function selectFiltroColor(varName, placeholder, opciones) {
   '</select>';
 }
 
-function setBuscaColor(v) { _colorBusca = v; pintarListaColores(); pintarCuentaColor(); }
+function setBuscaColor(v) { _colorBusca = v; pintarListaColores(); }
 function setSoloActivosColor(v) { _colorSoloActivos = v; pintarColores(); }
-
-function pintarCuentaColor() {
-  var pin = document.querySelector('#colores-cuerpo .tarjeta-cab .pin');
-  if (pin) pin.textContent = plural(coloresFiltrados().length, 'color', 'colores');
-}
 
 function pintarListaColores() {
   var cont = porId('colores-lista');
@@ -128,30 +121,39 @@ function pintarListaColores() {
     return;
   }
 
-  cont.innerHTML = '<div class="lista">' + lista.map(filaColor).join('') + '</div>';
+  cont.innerHTML = '<div class="colores-grilla">' + lista.map(tarjetaColor).join('') + '</div>';
 }
 
-function filaColor(c) {
+function tarjetaColor(c) {
   var sinStock = (+c.stock || 0) <= 0;
-  var swatch = c.hex
-    ? '<span class="buscador-swatch" style="background:' + esc(c.hex) + ';border-color:rgba(0,0,0,.15)"></span>'
-    : '<span class="buscador-swatch buscador-swatch-vacio"></span>';
-  return '<button class="fila" onclick="editarColor(' + c.id + ')">' +
-    swatch +
-    '<div class="fila-principal">' +
-      '<div class="fila-titulo">' + esc(c.codigo) + (c.nombre ? ' · ' + esc(c.nombre) : '') +
-        (!bool(c.activo) ? ' <span class="pin pin-neutro">Oculto</span>' : '') +
-        (bool(c.en_oferta) ? ' <span class="pin pin-warn">Oferta</span>' : '') +
-      '</div>' +
-      '<div class="fila-sub">' + [c.coleccion, c.acabado].filter(Boolean).map(esc).join(' · ') + '</div>' +
+  var imagen = c.imagen_url || c.imagen_una_url || '';
+  var media = imagen
+    ? '<img src="' + esc(imagen) + '" alt="" loading="lazy"/>'
+    : '<span class="sin-imagen">' + ic('image', 26) + '</span>';
+
+  var precioHTML = '';
+  if (bool(c.en_oferta) && +c.precio_oferta > 0) {
+    precioHTML = '<div class="color-card-precio">' +
+      (+c.precio > 0 ? '<span class="tachado">' + plata(+c.precio) + '</span>' : '') +
+      '<span class="oferta">' + plata(+c.precio_oferta) + '</span></div>';
+  } else if (+c.precio > 0) {
+    precioHTML = '<div class="color-card-precio">' + plata(+c.precio) + '</div>';
+  }
+
+  return '<button class="color-card' + (bool(c.activo) ? '' : ' inactivo') + '" onclick="editarColor(' + c.id + ')">' +
+    '<div class="color-card-media">' +
+      '<span class="color-card-num">N.° ' + esc(c.codigo) + '</span>' +
+      (bool(c.en_oferta) ? '<span class="color-card-oferta">Oferta</span>' : '') +
+      media +
+      (sinStock ? '<span class="color-card-stockcero">Sin stock</span>' : '') +
     '</div>' +
-    '<div class="fila-derecha">' +
-      (bool(c.en_oferta) && +c.precio_oferta > 0
-        ? '<div class="fila-titulo" style="color:var(--warn)">' + plata(+c.precio_oferta) + '</div>'
-        : (+c.precio > 0 ? '<div class="fila-titulo">' + plata(+c.precio) + '</div>' : '')) +
-      '<div class="fila-sub" style="color:' + (sinStock ? 'var(--danger)' : 'var(--muted)') + '">' +
-        (sinStock ? 'Sin stock' : plural(c.stock, 'unidad', 'unidades')) +
+    '<div class="color-card-pie">' +
+      '<span class="color-card-swatch" style="background:' + esc(c.hex || '#ddd') + '"></span>' +
+      '<div class="color-card-nombre">' + esc(c.nombre || c.codigo) +
+        (!bool(c.activo) ? ' <span class="pin pin-neutro" style="vertical-align:1px">Oculto</span>' : '') +
       '</div>' +
+      '<div class="color-card-codigo">N° ' + esc(c.codigo) + '</div>' +
+      precioHTML +
     '</div>' +
   '</button>';
 }
@@ -215,6 +217,70 @@ function autocompCerrarDiferido(id) {
   setTimeout(function () { autocompCerrar(id); }, 150);
 }
 
+/* ── Fotos: arrastrar o elegir un archivo, sube solo ──────────
+   Reemplaza los campos de URL de toda la vida. _imgActual guarda
+   lo que va a quedar guardado (arranca con lo que ya tenía el
+   color); subirArchivoColor() lo sube a Supabase Storage y
+   actualiza esto y la vista previa. */
+var _imgActual = { frasco: '', una: '' };
+var _SUBEIMG_CFG = {
+  frasco: { titulo: 'Foto del frasco', ayuda: 'JPG, PNG o WEBP · fondo claro/blanco · hasta 5 MB. Vacía = el catálogo dibuja una uña con el color de arriba.' },
+  una:    { titulo: 'Foto de una uña con este color', ayuda: 'Opcional: primer plano de la uña ya pintada. Vacía = se usa solo la del frasco.' }
+};
+
+function subeimgHTML(campo) {
+  var cfg = _SUBEIMG_CFG[campo];
+  var url = _imgActual[campo];
+  return '<div class="campo" id="subeimg-wrap-' + campo + '"><div class="campo-etiq">' + esc(cfg.titulo) + '</div>' +
+    '<div class="subeimg" ' +
+      'ondragover="event.preventDefault();event.stopPropagation();this.classList.add(\'arrastrando\')" ' +
+      'ondragleave="this.classList.remove(\'arrastrando\')" ' +
+      'ondrop="event.preventDefault();this.classList.remove(\'arrastrando\');subirArchivoColor((event.dataTransfer.files||[])[0],\'' + campo + '\')">' +
+      '<div class="subeimg-preview" id="subeimg-prev-' + campo + '">' +
+        (url ? '<img src="' + esc(url) + '"/>' : '<span class="sin-imagen">' + ic('image', 22) + '</span>') +
+      '</div>' +
+      '<div class="subeimg-info">' +
+        '<div class="subeimg-titulo">Arrastrá una foto acá o tocá "Subir"</div>' +
+        '<div class="subeimg-ayuda">' + esc(cfg.ayuda) + '</div>' +
+      '</div>' +
+      '<div class="subeimg-acciones">' +
+        '<button type="button" class="subeimg-btn" id="subeimg-btn-' + campo + '" onclick="porId(\'archivo-' + campo + '\').click()">' +
+          ic('upload', 14) + ' ' + (url ? 'Cambiar' : 'Subir') + '</button>' +
+        (url ? '<button type="button" class="subeimg-btn quitar" onclick="quitarImagenColor(\'' + campo + '\')" aria-label="Quitar imagen">' + ic('trash', 14) + '</button>' : '') +
+      '</div>' +
+      '<input type="file" accept="image/*" id="archivo-' + campo + '" onchange="subirArchivoColor(this.files[0],\'' + campo + '\');this.value=\'\'"/>' +
+    '</div></div>';
+}
+
+function repintarSubeimg(campo) {
+  var envoltorio = porId('subeimg-wrap-' + campo);
+  if (envoltorio) envoltorio.outerHTML = subeimgHTML(campo);
+}
+
+async function subirArchivoColor(archivo, campo) {
+  if (!archivo) return;
+  var prev = porId('subeimg-prev-' + campo);
+  var btn = porId('subeimg-btn-' + campo);
+  if (!prev) return;
+  var previoHTML = prev.innerHTML;
+  prev.innerHTML = '<div class="girador"></div>';
+  if (btn) btn.disabled = true;
+  try {
+    var url = await subirImagen(archivo, campo === 'una' ? 'una' : 'frasco');
+    _imgActual[campo] = url;
+    repintarSubeimg(campo);
+    toast('Imagen subida');
+  } catch (e) {
+    prev.innerHTML = previoHTML;
+    if (btn) btn.disabled = false;
+    toast(e.message, 'error');
+  }
+}
+function quitarImagenColor(campo) {
+  _imgActual[campo] = '';
+  repintarSubeimg(campo);
+}
+
 function abrirFormColor(c) {
   var esNuevo = !c;
   c = c || {
@@ -222,6 +288,7 @@ function abrirFormColor(c) {
     descripcion: '', activo: true, en_oferta: false, precio: '', precio_oferta: '', oferta_pack: '', oferta_nota: '',
     stock: 0
   };
+  _imgActual = { frasco: c.imagen_url || '', una: c.imagen_una_url || '' };
 
   abrirModal(esNuevo ? 'Nuevo color' : 'Editar color',
     '<div class="par-campos">' +
@@ -240,13 +307,11 @@ function abrirFormColor(c) {
       '</div>' +
     '</div>' +
     '<div class="campo"><div class="campo-etiq">Color (swatch)</div>' +
-      '<input class="color-swatch-input" type="color" id="col-hex" value="' + esc(c.hex || '#c84b8c') + '"/></div>' +
-    '<div class="campo"><div class="campo-etiq">Foto del frasco (opcional, URL)</div>' +
-      '<input class="campo-input" id="col-imagen" value="' + esc(c.imagen_url || '') + '" placeholder="https://…"/>' +
-      '<div class="campo-ayuda">Si la dejás vacía, el catálogo dibuja una uña con el color de arriba.</div></div>' +
-    '<div class="campo"><div class="campo-etiq">Foto de una uña con este color (opcional, URL)</div>' +
-      '<input class="campo-input" id="col-imagen-una" value="' + esc(c.imagen_una_url || '') + '" placeholder="https://…"/>' +
-      '<div class="campo-ayuda">Solo se muestra si es una foto real. Sin ella, no se inventa ninguna: si hay foto de frasco se ve sola, y si no hay ninguna de las dos, se dibuja la uña con el color de arriba.</div></div>' +
+      '<input class="color-swatch-input" type="color" id="col-hex" value="' + esc(c.hex || '#7c2635') + '"/></div>' +
+
+    subeimgHTML('frasco') +
+    subeimgHTML('una') +
+
     '<div class="campo"><div class="campo-etiq">Descripción (opcional)</div>' +
       '<textarea class="campo-input" id="col-descripcion" rows="4" placeholder="Ej: Rojo intenso de alto brillo.&#10;Ideal para looks *clásicos*.">' + esc(c.descripcion || '') + '</textarea>' +
       '<div class="campo-ayuda">Se ve en la ficha de detalle del catálogo, tal cual la escribas acá: respeta mayúsculas y renglones, y una palabra entre *asteriscos* sale en <strong>negrita</strong>. Si la dejás vacía, se arma una automática con la colección y el acabado.</div></div>' +
@@ -300,8 +365,8 @@ async function guardarColor(id) {
   var coleccion = porId('col-coleccion').value.trim();
   var acabado = porId('col-acabado').value.trim();
   var hex = porId('col-hex').value;
-  var imagen_url = porId('col-imagen').value.trim();
-  var imagen_una_url = porId('col-imagen-una').value.trim();
+  var imagen_url = _imgActual.frasco;
+  var imagen_una_url = _imgActual.una;
   var descripcion = porId('col-descripcion').value;   // sin trim: los saltos de línea del principio/final los pone quien escribe
   var precio = +porId('col-precio').value || 0;
   var precio_oferta = porId('col-precio-oferta').value ? +porId('col-precio-oferta').value : null;

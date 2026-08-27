@@ -15,6 +15,34 @@ function pintarMarca(destino) {
     '</div>';
 }
 
+/* ── Modo oscuro ───────────────────────────────────────────────
+   Un interruptor simple (no un menú con "auto/claro/oscuro"): un
+   toque alterna entre los dos. Arranca seteado según el sistema
+   (temaGuardado() en config.js default 'auto') y en cuanto se
+   toca una vez queda guardado explícito para la próxima visita. */
+function temaEsOscuroAhora() {
+  var t = temaGuardado();
+  if (t === 'oscuro') return true;
+  if (t === 'claro') return false;
+  try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; }
+}
+function alternarTemaAdmin() {
+  guardarTema(temaEsOscuroAhora() ? 'claro' : 'oscuro');
+  pintarBotonesTema();
+}
+function botonTemaHTML(compacto) {
+  var oscuro = temaEsOscuroAhora();
+  return '<button class="' + (compacto ? 'btn btn-fantasma' : 'tema-switch') + '" style="' + (compacto ? 'padding:6px' : '') + '" ' +
+    'onclick="alternarTemaAdmin()" aria-label="Cambiar a modo ' + (oscuro ? 'claro' : 'oscuro') + '" title="Modo ' + (oscuro ? 'claro' : 'oscuro') + '">' +
+    '<span class="tema-switch-ic">' + ic(oscuro ? 'sun' : 'moon', compacto ? 18 : 15) + '</span>' +
+    (compacto ? '' : '<span>Modo ' + (oscuro ? 'claro' : 'oscuro') + '</span>') +
+  '</button>';
+}
+function pintarBotonesTema() {
+  var lat = porId('tema-boton-lateral'); if (lat) lat.innerHTML = botonTemaHTML(false);
+  var top = porId('tema-boton-topbar'); if (top) top.innerHTML = botonTemaHTML(true);
+}
+
 /* ── Pantalla de ingreso ─────────────────────────────────────
    Solo pide la contraseña (nada de usuario ni email): la cuenta
    fija que la recibe está en config.js (ADMIN_LOGIN_EMAIL). */
@@ -70,6 +98,7 @@ function arrancarApp() {
         '<div class="marca" id="marca-lateral"></div>' +
         '<nav class="nav" id="nav"></nav>' +
         '<div class="pie-lateral">' +
+          '<div id="tema-boton-lateral" style="margin-bottom:8px">' + botonTemaHTML(false) + '</div>' +
           '<button class="btn btn-fantasma" style="padding:6px 0" onclick="salir()">' + ic('undo', 15) + ' Cerrar sesión</button>' +
         '</div>' +
       '</aside>' +
@@ -77,7 +106,8 @@ function arrancarApp() {
         '<div class="topbar">' +
           '<img src="' + LOGO_INTENCIONAL + '" style="width:26px;height:26px;object-fit:contain" alt=""/>' +
           '<div class="marca-nombre">Catálogo</div>' +
-          '<a class="btn btn-fantasma" style="padding:6px;margin-left:auto" href="' + URL_CATALOGO_PUBLICO + '" target="_blank" rel="noopener" aria-label="Ver el catálogo">' + ic('eye', 18) + '</a>' +
+          '<span id="tema-boton-topbar" style="margin-left:auto">' + botonTemaHTML(true) + '</span>' +
+          '<a class="btn btn-fantasma" style="padding:6px" href="' + URL_CATALOGO_PUBLICO + '" target="_blank" rel="noopener" aria-label="Ver el catálogo">' + ic('eye', 18) + '</a>' +
         '</div>' +
         '<div id="contenido"></div>' +
       '</main>' +

@@ -2,10 +2,110 @@
    Estilos propios de esta página, encima de css/estilo.css
    (el mismo sistema de diseño que usan el Catálogo y la app de
    Intencional: colores, tipografía, tarjetas, modal, botones).
+
+   Acá se reemplazan los tokens de color y tipografía por los del
+   catálogo impreso (fondo crema, bordó, dorado, Playfair Display
+   itálica) — el resto de la hoja (estilo.css) no se entera, todo
+   sigue funcionando con las mismas clases.
    ═══════════════════════════════════════════════════════════ */
 
-/* Robots.txt casero: esta página no tiene nada que a Google le
-   importe indexar, y así de paso queda un poco menos a la vista. */
+/* ── Paleta "catálogo impreso" ────────────────────────────── */
+:root{
+  --rose:#7c2635;
+  --rose-light:#f7ebe8;
+  --rose-border:rgba(124,38,53,.22);
+  --rose-30:rgba(124,38,53,.32);
+  --violet:#a9863f;
+  --grad:linear-gradient(135deg,#a9863f,#7c2635);
+  --grad-h:linear-gradient(90deg,#a9863f,#7c2635);
+  --dorado:#a9863f;
+  --dorado-suave:rgba(169,134,63,.35);
+
+  --bg:#fffdf9;
+  --surface:#f1e8d8;
+  --subtle:#f7ede4;
+  --border:#e6dac4;
+
+  --text:#2b2219;
+  --text2:#5c4c3d;
+  --muted:#9c8770;
+
+  --sombra:0 1px 2px rgba(43,34,25,.05);
+  --sombra-alta:0 10px 28px rgba(90,60,40,.14);
+}
+
+html[data-tema="oscuro"]{
+  --rose:#e0a2ab;
+  --rose-light:#2c1f20;
+  --rose-border:rgba(224,162,171,.3);
+  --rose-30:rgba(224,162,171,.38);
+  --violet:#cdac6c;
+  --grad:linear-gradient(135deg,#cdac6c,#e0a2ab);
+  --grad-h:linear-gradient(90deg,#cdac6c,#e0a2ab);
+  --dorado:#cdac6c;
+  --dorado-suave:rgba(205,172,108,.32);
+
+  --bg:#221b16;
+  --surface:#17110d;
+  --subtle:#291f18;
+  --border:#3b2f25;
+
+  --text:#f4ece1;
+  --text2:#cdbba9;
+  --muted:#9c8770;
+
+  --sombra:0 1px 2px rgba(0,0,0,.4);
+  --sombra-alta:0 10px 30px rgba(0,0,0,.55);
+}
+
+@media (prefers-color-scheme:dark){
+  html[data-tema="auto"]{
+    --rose:#e0a2ab;
+    --rose-light:#2c1f20;
+    --rose-border:rgba(224,162,171,.3);
+    --rose-30:rgba(224,162,171,.38);
+    --violet:#cdac6c;
+    --grad:linear-gradient(135deg,#cdac6c,#e0a2ab);
+    --grad-h:linear-gradient(90deg,#cdac6c,#e0a2ab);
+    --dorado:#cdac6c;
+    --dorado-suave:rgba(205,172,108,.32);
+
+    --bg:#221b16;
+    --surface:#17110d;
+    --subtle:#291f18;
+    --border:#3b2f25;
+
+    --text:#f4ece1;
+    --text2:#cdbba9;
+    --muted:#9c8770;
+
+    --sombra:0 1px 2px rgba(0,0,0,.4);
+    --sombra-alta:0 10px 30px rgba(0,0,0,.55);
+  }
+}
+
+/* El body queda crema (como la página del catálogo impreso); las
+   tarjetas siguen usando --bg, que acá es blanco marfil, así que
+   se despegan solas del fondo sin tocar el resto de la hoja. */
+body{background:var(--surface)}
+.topbar{background:var(--surface);border-color:var(--border)}
+
+.marca-nombre{font-style:italic}
+.cabecera h1{border-bottom:1px solid var(--dorado-suave);padding-bottom:14px;display:inline-block}
+.eyebrow{color:var(--dorado)}
+.nav-item[aria-current="page"]{box-shadow:inset 2px 0 0 var(--dorado)}
+
+/* ── Selector de tema (claro / oscuro) ────────────────────────
+   Un interruptor simple, no un menú: un clic alterna. Sigue el
+   valor guardado (temaGuardado / guardarTema en config.js), que
+   arranca en "auto" y pasa a explícito en cuanto se toca. */
+.tema-switch{
+  display:flex;align-items:center;gap:6px;width:100%;padding:7px 10px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);
+  color:var(--text2);font-size:12.5px;font-weight:600;cursor:pointer;
+}
+.tema-switch:hover{border-color:var(--rose-30);color:var(--rose)}
+.tema-switch .tema-switch-ic{display:flex;color:var(--dorado)}
 
 /* ── Selector de color circular ───────────────────────────────
    El <input type="color"> de fábrica es un rectángulo grande.
@@ -36,3 +136,92 @@
   border-radius:6px;font-size:13.5px;cursor:pointer;color:var(--text);
 }
 .autocomp-opcion:hover,.autocomp-opcion:focus-visible{background:var(--subtle)}
+
+/* ═══════════════════════════════════════════════════════════
+   GALERÍA DE COLORES — la tarjeta imita la ficha del catálogo
+   impreso: número de tono arriba, foto del frasco, swatch redondo
+   y nombre en Playfair debajo.
+   ═══════════════════════════════════════════════════════════ */
+.colores-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.colores-toolbar .buscador{flex:1;min-width:200px;margin-bottom:0}
+.colores-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+
+/* Columnas fijas por ancho, no auto-fill/minmax: con aspect-ratio
+   en las tarjetas, auto-fill puede colapsar a 1 sola columna en
+   Safari/WebKit (bug conocido, ya lo pisamos una vez en el
+   catálogo público) — con números fijos no depende de que el
+   navegador calcule bien. */
+.colores-grilla{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+@media (max-width:1100px){ .colores-grilla{grid-template-columns:repeat(4,1fr)} }
+@media (max-width:860px){ .colores-grilla{grid-template-columns:repeat(3,1fr);gap:12px} }
+@media (max-width:560px){ .colores-grilla{grid-template-columns:repeat(2,1fr);gap:10px} }
+@media (max-width:360px){ .colores-grilla{grid-template-columns:1fr} }
+.color-card{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);
+  overflow:hidden;text-align:left;cursor:pointer;box-shadow:var(--sombra);
+  transition:box-shadow .15s,transform .15s,border-color .15s;position:relative;
+}
+.color-card:hover{box-shadow:var(--sombra-alta);border-color:var(--rose-30);transform:translateY(-2px)}
+.color-card:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
+.color-card.inactivo{opacity:.5}
+
+.color-card-media{
+  position:relative;aspect-ratio:1/1.05;background:
+    radial-gradient(120% 120% at 50% 0%, var(--subtle), var(--bg) 70%);
+  display:flex;align-items:center;justify-content:center;padding:14px;
+}
+.color-card-media img{max-width:100%;max-height:100%;object-fit:contain}
+.color-card-media .sin-imagen{color:var(--muted)}
+
+.color-card-num{
+  position:absolute;top:9px;left:11px;font-family:var(--acento);font-size:9px;font-weight:700;
+  letter-spacing:1px;color:var(--muted);
+}
+.color-card-oferta{
+  position:absolute;top:8px;right:8px;background:var(--rose);color:#fff;font-family:var(--acento);
+  font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:20px;
+  box-shadow:0 2px 6px rgba(0,0,0,.18);
+}
+.color-card-stockcero{
+  position:absolute;bottom:8px;left:8px;right:8px;background:var(--danger-bg);color:var(--danger-texto,var(--danger));
+  font-size:10px;font-weight:700;text-align:center;padding:3px 6px;border-radius:20px;
+  border:1px solid var(--danger-border);
+}
+
+.color-card-pie{padding:12px 13px 14px;border-top:1px solid var(--border);text-align:center}
+.color-card-swatch{
+  display:block;width:22px;height:22px;border-radius:50%;margin:-27px auto 8px;box-shadow:0 0 0 3px var(--bg),0 1px 4px rgba(0,0,0,.2);
+  border:1px solid rgba(0,0,0,.08);
+}
+.color-card-nombre{font-family:var(--display);font-size:15.5px;line-height:1.2;margin-bottom:2px}
+.color-card-codigo{font-family:var(--acento);font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--rose)}
+.color-card-precio{font-size:11px;color:var(--muted);margin-top:4px}
+.color-card-precio .tachado{text-decoration:line-through;opacity:.65;margin-right:4px}
+.color-card-precio .oferta{color:var(--rose);font-weight:700}
+
+/* ── Cargador de imágenes (frasco / uña) ──────────────────────
+   Reemplaza el campo de URL de toda la vida por algo que se
+   pueda arrastrar o tocar. El input de archivo real queda oculto:
+   lo que se ve es esta caja. */
+.subeimg{
+  display:flex;gap:12px;align-items:center;border:1.5px dashed var(--border);border-radius:var(--radius);
+  padding:10px;background:var(--subtle);transition:border-color .15s,background .15s;
+}
+.subeimg.arrastrando{border-color:var(--rose);background:var(--rose-light)}
+.subeimg-preview{
+  width:64px;height:64px;border-radius:var(--radius-sm);background:var(--bg);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:var(--muted);
+}
+.subeimg-preview img{width:100%;height:100%;object-fit:contain}
+.subeimg-info{flex:1;min-width:0}
+.subeimg-titulo{font-size:12.5px;font-weight:600;margin-bottom:2px}
+.subeimg-ayuda{font-size:11px;color:var(--muted)}
+.subeimg-acciones{display:flex;gap:6px;flex-shrink:0}
+.subeimg input[type="file"]{display:none}
+.subeimg-btn{
+  border:1px solid var(--border);background:var(--bg);border-radius:var(--radius-sm);padding:7px 10px;
+  font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;gap:5px;
+}
+.subeimg-btn:hover{border-color:var(--rose-30);color:var(--rose)}
+.subeimg-btn.quitar:hover{border-color:var(--danger-border);color:var(--danger)}
+.subeimg-btn:disabled{opacity:.5;cursor:default}
