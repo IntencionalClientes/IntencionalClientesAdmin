@@ -95,7 +95,7 @@ function pintarColores() {
 
 function selectFiltroColor(varName, placeholder, opciones) {
   var actual = window[varName];
-  return '<select class="campo-input" style="max-width:190px" onchange="' + varName + '=this.value;pintarColores()">' +
+  return '<select class="campo-input" onchange="' + varName + '=this.value;pintarColores()">' +
     '<option value="">' + esc(placeholder) + '</option>' +
     opciones.map(function (o) {
       return '<option value="' + esc(o) + '"' + (actual === o ? ' selected' : '') + '>' + esc(o) + '</option>';
@@ -320,6 +320,13 @@ function abrirFormColor(c) {
     '<div class="campo"><div class="campo-etiq">Color (swatch)</div>' +
       '<input class="color-swatch-input" type="color" id="col-hex" value="' + esc(c.hex || '#7c2635') + '"/></div>' +
 
+    '<div style="display:flex;gap:20px;flex-wrap:wrap;margin:2px 0 4px">' +
+      '<label style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer">' +
+        '<input type="checkbox" id="col-activo"' + (bool(c.activo) ? ' checked' : '') + '/> Visible en el catálogo</label>' +
+      '<label style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer">' +
+        '<input type="checkbox" id="col-en-oferta"' + (bool(c.en_oferta) ? ' checked' : '') + '/> En oferta</label>' +
+    '</div>' +
+
     subeimgHTML('frasco') +
     subeimgHTML('una') +
 
@@ -343,12 +350,7 @@ function abrirFormColor(c) {
         '<input class="campo-input" id="col-oferta-nota" value="' + esc(c.oferta_nota || '') + '" placeholder="Ej: Por tiempo limitado"/></div>' +
     '</div>' +
 
-    (esNuevo ? '' : stockColorSoloLecturaHTML(c)) +
-    '<label style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:14px">' +
-      '<input type="checkbox" id="col-activo"' + (bool(c.activo) ? ' checked' : '') + '/> Visible en el catálogo</label>' +
-    '<label style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:8px">' +
-      '<input type="checkbox" id="col-en-oferta"' + (bool(c.en_oferta) ? ' checked' : '') + '/> En oferta ' +
-      '<span style="font-weight:400;color:var(--muted)">(aparece destacado primero en el catálogo)</span></label>',
+    (esNuevo ? '' : stockColorSoloLecturaHTML(c)),
     '<button class="btn btn-primario btn-bloque" onclick="guardarColor(' + (esNuevo ? 'null' : c.id) + ')">Guardar</button>' +
     (esNuevo ? '' :
       '<button class="btn btn-peligro btn-bloque" style="margin-top:8px" onclick="confirmarBorrarColor(' + c.id + ')">Eliminar color</button>'));

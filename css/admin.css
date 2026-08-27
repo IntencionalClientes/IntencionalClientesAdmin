@@ -91,6 +91,15 @@ html[data-tema="oscuro"]{
    tarjetas usan --bg, un blanco marfil apenas distinto, así que
    se despegan solas del fondo sin tocar el resto de la hoja. */
 body{background:var(--surface)}
+
+/* estilo.css le pone "overflow-x:hidden" también al <body> (para
+   que nada se corra hacia el costado) — pero eso, en Chrome,
+   hace que TODO lo "pegajoso" (position:sticky) dentro del body
+   deje de pegarse: nunca se queda fijo arriba, sea la barra de
+   arriba o el buscador. Achicando el freno solo al <html> (que ya
+   alcanza para lo mismo) se arregla, sin tocar la hoja compartida
+   con el resto de las páginas. */
+body{overflow-x:visible}
 .cabecera h1{border-bottom:1px solid var(--dorado-suave);padding-bottom:14px;display:inline-block}
 .eyebrow{color:var(--dorado)}
 
@@ -188,6 +197,13 @@ textarea.campo-input{resize:none;overflow:hidden;min-height:74px;line-height:1.5
 /* ── Modal: un borde propio para que se despegue del fondo ──── */
 .modal-caja{border:1px solid var(--border)}
 
+/* El botón "Agregar color" (fondo degradado) tenía un filete
+   transparente encima del degradado, heredado de .atajo: en las
+   puntas redondeadas eso deja una puntita sin pintar del todo.
+   Estas dos variantes no necesitan ese borde (no llevan color de
+   borde propio), así que se saca y quedan bien rellenas. */
+.atajo-grad,.atajo-violeta{border:none}
+
 /* ── Selector de color circular ───────────────────────────────
    El <input type="color"> de fábrica es un rectángulo grande.
    Warning: -webkit-appearance:none + los pseudo-elementos de
@@ -223,8 +239,18 @@ textarea.campo-input{resize:none;overflow:hidden;min-height:74px;line-height:1.5
    impreso: número de tono arriba, foto del frasco, swatch redondo
    y nombre en Playfair debajo.
    ═══════════════════════════════════════════════════════════ */
-.colores-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+/* Pegado justo debajo de la barra de arriba: si no, al bajar para
+   mirar la grilla con el buscador todavía enfocado, el navegador
+   "tironeaba" la página hacia arriba solo con tocar una tecla más
+   (para no perder de vista el cursor donde se escribe) — quedaba
+   como si la página se bugueara sola. Fijo acá, nunca se pierde
+   de vista y ese tirón no vuelve a pasar. */
+.colores-toolbar{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;
+  position:sticky;top:61px;z-index:30;background:var(--surface);padding:10px 0;
+}
 .colores-toolbar .buscador{flex:1;min-width:200px;margin-bottom:0}
+.colores-toolbar select.campo-input{max-width:230px;text-overflow:ellipsis}
 
 /* Columnas fijas por ancho, no auto-fill/minmax: con aspect-ratio
    en las tarjetas, auto-fill puede colapsar a 1 sola columna en
@@ -246,10 +272,14 @@ textarea.campo-input{resize:none;overflow:hidden;min-height:74px;line-height:1.5
 .color-card.inactivo{opacity:.55}
 
 .color-card-media{
-  position:relative;aspect-ratio:1/1.05;background:var(--subtle);
+  position:relative;aspect-ratio:1/1.05;background:var(--subtle);overflow:hidden;
   display:flex;align-items:center;justify-content:center;padding:14px;
 }
-.color-card-media img{max-width:100%;max-height:100%;object-fit:contain}
+/* width/height:100% (no solo max-*) para que una foto de cualquier
+   tamaño real quede siempre encerrada en la ficha, nunca más
+   grande que su caja — object-fit se encarga de que no se
+   deforme ni se recorte. */
+.color-card-media img{width:100%;height:100%;object-fit:contain;display:block}
 .color-card-media img.rota{display:none}
 .color-card-media .sin-imagen{color:var(--muted)}
 
