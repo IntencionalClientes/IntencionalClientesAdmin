@@ -1,0 +1,38 @@
+/* ═══════════════════════════════════════════════════════════
+   Estilos propios de esta página, encima de css/estilo.css
+   (el mismo sistema de diseño que usan el Catálogo y la app de
+   Intencional: colores, tipografía, tarjetas, modal, botones).
+   ═══════════════════════════════════════════════════════════ */
+
+/* Robots.txt casero: esta página no tiene nada que a Google le
+   importe indexar, y así de paso queda un poco menos a la vista. */
+
+/* ── Selector de color circular ───────────────────────────────
+   El <input type="color"> de fábrica es un rectángulo grande.
+   Warning: -webkit-appearance:none + los pseudo-elementos de
+   Chrome/Firefox de abajo son lo que hace falta para que el
+   swatch nativo se pueda ver realmente redondo. */
+.color-swatch-input{
+  -webkit-appearance:none;appearance:none;width:44px;height:44px;padding:0;border:none;border-radius:50%;
+  cursor:pointer;background:none;box-shadow:0 0 0 1px var(--border);
+}
+.color-swatch-input::-webkit-color-swatch-wrapper{padding:0;border-radius:50%}
+.color-swatch-input::-webkit-color-swatch{border:none;border-radius:50%}
+.color-swatch-input::-moz-color-swatch{border:none;border-radius:50%}
+
+/* ── Autocompletar propio (Colección / Acabado) ───────────────
+   Reemplaza el <datalist> nativo, que no se llegaba a ver dentro
+   del modal con scroll. Esta lista es HTML de verdad: siempre se
+   dibuja donde tiene que estar. */
+.autocomp{position:relative}
+.autocomp-lista{
+  display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);
+  box-shadow:var(--sombra-alta);max-height:180px;overflow-y:auto;padding:4px;
+}
+.autocomp-lista.visible{display:block}
+.autocomp-opcion{
+  display:block;width:100%;text-align:left;background:none;border:none;padding:8px 10px;
+  border-radius:6px;font-size:13.5px;cursor:pointer;color:var(--text);
+}
+.autocomp-opcion:hover,.autocomp-opcion:focus-visible{background:var(--subtle)}
