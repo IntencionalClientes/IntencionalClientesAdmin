@@ -185,6 +185,15 @@ async function borrar(tabla, valorPk) {
   invalidarCache(tabla);
   return r;
 }
+/* Para los packs: antes de reemplazar qué colores incluye un pack,
+   hay que borrar sus renglones viejos en pack_items — esto es un
+   DELETE con un filtro cualquiera (no por un solo id), a diferencia
+   de borrar() de arriba. */
+async function borrarDonde(tabla, filtroQuery) {
+  var r = await rest(tabla + '?' + filtroQuery, { method: 'DELETE' });
+  invalidarCache(tabla);
+  return r;
+}
 
 /* ── Imágenes (Supabase Storage) ────────────────────────────
    Bucket público "colores-imagenes": cualquiera puede VER las

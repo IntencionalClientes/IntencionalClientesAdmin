@@ -25,7 +25,10 @@ var ADMIN_LOGIN_EMAIL = 'equipo@catalogo-intencional.local';
 var TABLAS = {
   colores: 'id',
   pedidos_b2b: 'id',
-  pedidos_b2b_items: 'id'
+  pedidos_b2b_items: 'id',
+  productos: 'id',
+  packs: 'id',
+  pack_items: 'id'
 };
 
 /* ── Link al catálogo público ─────────────────────────────────

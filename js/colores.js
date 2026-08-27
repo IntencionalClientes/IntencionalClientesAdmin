@@ -19,24 +19,74 @@ var _colorColeccionFiltro = '';
 var _colorAcabadoFiltro = '';
 var _colorSoloActivos = false;
 
+/* ── Vistas dentro de "Productos" ─────────────────────────────
+   Un solo menú (Productos) en vez de uno por tipo — adentro, una
+   fila de pestañas cambia qué se ve: los esmaltes de toda la vida,
+   los semipermanentes (misma ficha, es solo otra etiqueta), los
+   productos simples (cremas, colágeno) y los packs armados con
+   varios colores. Cada pestaña vive en su propio archivo — esta
+   (colores.js) dibuja la fila de pestañas y se ocupa de las dos
+   primeras; simples.js y packs.js se ocupan del resto. */
+var VISTAS_PRODUCTOS = [
+  { id: 'tradicional',    etiqueta: 'Esmaltes',          icono: 'droplet' },
+  { id: 'semipermanente', etiqueta: 'Semipermanentes',   icono: 'sparkles' },
+  { id: 'producto',       etiqueta: 'Cremas y colágeno', icono: 'pill' },
+  { id: 'pack',           etiqueta: 'Packs',             icono: 'box' }
+];
+var _vistaProductos = 'tradicional';
+
 registrarPagina({
-  id: 'colores',
-  menu: 'Colores',
+  id: 'productos',
+  menu: 'Productos',
   grupo: 'Catálogo',
   icono: 'palette',
-  titulo: 'Colores',
-  subtitulo: 'El catálogo de esmaltes: acá se cargan y el Catálogo los toma solo',
+  titulo: 'Productos',
+  subtitulo: 'Todo lo que se vende por el catálogo: esmaltes, semipermanentes, cremas, colágeno y packs',
 
   async montar(cont) {
     _colores = await traerCacheado('colores');
-    cont.innerHTML = '<div id="colores-cuerpo"></div>';
-    pintarColores();
+    cont.innerHTML = '<div id="tipo-tabs"></div><div id="colores-cuerpo"></div>';
+    pintarSelectorVista();
+    await pintarVistaActual();
   }
 });
+
+function pintarSelectorVista() {
+  var cont = porId('tipo-tabs');
+  if (!cont) return;
+  cont.innerHTML = '<div class="tipo-tabs">' +
+    VISTAS_PRODUCTOS.map(function (v) {
+      return '<button class="tipo-tab' + (v.id === _vistaProductos ? ' activo' : '') + '" onclick="cambiarVistaProductos(\'' + v.id + '\')">' +
+        ic(v.icono, 15) + '<span>' + esc(v.etiqueta) + '</span></button>';
+    }).join('') +
+  '</div>';
+}
+
+async function cambiarVistaProductos(id) {
+  if (id === _vistaProductos) return;
+  _vistaProductos = id;
+  pintarSelectorVista();
+  await pintarVistaActual();
+}
+
+/* Cada pestaña dibuja su propio contenido dentro de #colores-cuerpo
+   — colores.js resuelve las dos de esmaltes acá mismo; las otras
+   dos las resuelven simples.js y packs.js (cargan sus datos recién
+   la primera vez que se entra a esa pestaña, no todas de arranque). */
+async function pintarVistaActual() {
+  if (_vistaProductos === 'tradicional' || _vistaProductos === 'semipermanente') {
+    pintarColores();
+  } else if (_vistaProductos === 'producto') {
+    await pintarProductosSimples();
+  } else if (_vistaProductos === 'pack') {
+    await pintarPacks();
+  }
+}
 
 function coloresFiltrados() {
   var q = normalizar(_colorBusca);
   return _colores.filter(function (c) {
+    if ((c.tipo || 'tradicional') !== _vistaProductos) return false;
     if (_colorSoloActivos && !bool(c.activo)) return false;
     if (_colorColeccionFiltro && c.coleccion !== _colorColeccionFiltro) return false;
     if (_colorAcabadoFiltro && c.acabado !== _colorAcabadoFiltro) return false;
@@ -45,9 +95,15 @@ function coloresFiltrados() {
   });
 }
 
+/* Colección/acabado sugeridos: solo de la pestaña activa (un
+   semipermanente no tiene por qué compartir colecciones con los
+   tradicionales). */
+function coloresDeLaVista() {
+  return _colores.filter(function (c) { return (c.tipo || 'tradicional') === _vistaProductos; });
+}
 function valoresUnicos(campo) {
   var s = {};
-  _colores.forEach(function (c) { if (c[campo]) s[c[campo]] = 1; });
+  coloresDeLaVista().forEach(function (c) { if (c[campo]) s[c[campo]] = 1; });
   return Object.keys(s).sort(function (a, b) { return a.localeCompare(b, 'es'); });
 }
 
@@ -55,22 +111,25 @@ function pintarColores() {
   var cont = porId('colores-cuerpo');
   if (!cont) return;
 
-  var sinStock = _colores.filter(function (c) { return (+c.stock || 0) <= 0; }).length;
-  var activos = _colores.filter(function (c) { return bool(c.activo); }).length;
-  var enOferta = _colores.filter(function (c) { return bool(c.en_oferta); }).length;
+  var deLaVista = coloresDeLaVista();
+  var esSemi = _vistaProductos === 'semipermanente';
+  var etiquetaBoton = esSemi ? 'Agregar semipermanente' : 'Agregar esmalte';
+  var sinStock = deLaVista.filter(function (c) { return (+c.stock || 0) <= 0; }).length;
+  var activos = deLaVista.filter(function (c) { return bool(c.activo); }).length;
+  var enOferta = deLaVista.filter(function (c) { return bool(c.en_oferta); }).length;
 
   cont.innerHTML =
-    (_colores.length ? '' : avisoHTML('info',
-      'Todavía no cargaste ningún color. Los que agregues acá aparecen solos en el ' +
+    (deLaVista.length ? '' : avisoHTML('info',
+      'Todavía no cargaste ningún ' + (esSemi ? 'semipermanente' : 'esmalte') + '. Los que agregues acá aparecen solos en el ' +
       '<strong>catálogo</strong>, con su stock.', 'palette')) +
 
     '<div class="atajos" style="margin-bottom:14px">' +
       '<button class="atajo atajo-grad" onclick="nuevoColor()">' + ic('plus', 17) +
-        '<span>Agregar color</span></button>' +
+        '<span>' + esc(etiquetaBoton) + '</span></button>' +
     '</div>' +
 
     '<div class="grilla-stats" style="margin-bottom:16px">' +
-      stat('palette', 'Colores cargados', String(_colores.length), plural(activos, 'activo'), 'var(--rose)') +
+      stat('palette', esSemi ? 'Semipermanentes cargados' : 'Esmaltes cargados', String(deLaVista.length), plural(activos, 'activo'), 'var(--rose)') +
       (sinStock ? stat('alert', 'Sin stock', String(sinStock), plural(sinStock, 'color', 'colores'), 'var(--danger)') : '') +
       (enOferta ? stat('tag', 'En oferta', String(enOferta), plural(enOferta, 'color', 'colores'), 'var(--dorado)') : '') +
     '</div>' +
@@ -301,7 +360,7 @@ function abrirFormColor(c) {
   };
   _imgActual = { frasco: c.imagen_url || '', una: c.imagen_una_url || '' };
 
-  abrirModal(esNuevo ? 'Nuevo color' : 'Editar color',
+  abrirModal(esNuevo ? (_vistaProductos === 'semipermanente' ? 'Nuevo semipermanente' : 'Nuevo esmalte') : 'Editar color',
     '<div class="par-campos">' +
       '<div class="pc-1"><div class="campo-etiq">Código</div>' +
         '<input class="campo-input" id="col-codigo" value="' + esc(c.codigo) + '" placeholder="Ej: 006"' +
@@ -407,10 +466,10 @@ async function guardarColor(id) {
     if (id) {
       await actualizar('colores', id, datos);
     } else {
-      await crear('colores', Object.assign({ codigo: codigo, stock: 0 }, datos));
+      await crear('colores', Object.assign({ codigo: codigo, stock: 0, tipo: _vistaProductos }, datos));
     }
     cerrarModal();
-    toast('Color guardado');
+    toast(_vistaProductos === 'semipermanente' ? 'Semipermanente guardado' : 'Esmalte guardado');
     _colores = await traerCacheado('colores');
     pintarColores();
   } catch (e) { toast(e.message, 'error'); }
