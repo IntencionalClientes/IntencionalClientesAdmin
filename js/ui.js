@@ -12,11 +12,24 @@ function porId(id) { return document.getElementById(id); }
    arrastrar a mano (ver textarea.campo-input{resize:none} en
    admin.css). Se llama en el oninput del campo y una vez al
    abrirlo, para que ya arranque con la altura justa si venía con
-   texto cargado. */
+   texto cargado.
+
+   El truco de "poner height:auto y después al scrollHeight" achica
+   el campo a una sola línea por un instante antes de volver a
+   agrandarlo — en el celular, ese achique momentáneo hace que el
+   navegador reacomode el scroll para mantener visible el campo
+   enfocado, y el resultado se siente como que "tira todo para
+   arriba" con cada letra. Guardando y restaurando el scroll del
+   modal alrededor del cambio de altura, ese reacomodo automático
+   queda cancelado antes de que se llegue a pintar. */
 function ajustarAlturaTextarea(el) {
   if (!el) return;
+  var cuerpo = el.closest('.modal-cuerpo');
+  var scrollGuardado = cuerpo ? cuerpo.scrollTop : (window.scrollY || document.documentElement.scrollTop);
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
+  if (cuerpo) cuerpo.scrollTop = scrollGuardado;
+  else window.scrollTo(0, scrollGuardado);
 }
 
 /* ── Escapado: TODO lo que venga de la base pasa por acá ─── */

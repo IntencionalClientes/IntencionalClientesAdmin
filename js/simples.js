@@ -221,7 +221,7 @@ async function guardarProductoSimple(id) {
     cerrarModal();
     toast('Producto guardado');
     _productos = await traerCacheado('productos');
-    dibujarProductosSimples();
+    pintarProductosUnificado();
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -239,6 +239,6 @@ async function borrarProductoSimple(id) {
     cerrarModal();
     toast('Producto eliminado');
     _productos = await traerCacheado('productos');
-    dibujarProductosSimples();
+    pintarProductosUnificado();
   } catch (e) { toast(e.message, 'error'); }
 }

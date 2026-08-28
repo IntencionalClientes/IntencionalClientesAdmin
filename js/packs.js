@@ -25,18 +25,20 @@ async function pintarPacks() {
   dibujarPacks();
 }
 
-/* pack_items solo guarda color_id + cantidad (no duplica código ni
-   nombre): se resuelven acá mirando _colores, así siempre muestran
-   el nombre/código actual del color, aunque cambie después. */
+/* Un pack puede llevar colores (esmaltes/semipermanentes) Y
+   productos simples (cremas, colágeno) mezclados — cada renglón de
+   pack_items dice de qué tipo es (tipo_item) y apunta a color_id o
+   a producto_id según corresponda. No duplica código ni nombre: se
+   resuelven acá mirando _colores/_productos, así siempre muestran
+   el nombre/código actual, aunque cambie después. */
 function itemsDePack(packId) {
   return _packItems.filter(function (it) { return it.pack_id === packId; }).map(function (it) {
+    if (it.tipo_item === 'producto') {
+      var prod = _productos.find(function (p) { return p.id === it.producto_id; });
+      return { tipo: 'producto', id: it.producto_id, etiqueta: prod ? prod.nombre : 'Producto eliminado', cantidad: it.cantidad };
+    }
     var color = _colores.find(function (c) { return c.id === it.color_id; });
-    return {
-      color_id: it.color_id,
-      codigo: color ? color.codigo : '?',
-      nombre: color ? (color.nombre || color.codigo) : 'Color eliminado',
-      cantidad: it.cantidad
-    };
+    return { tipo: 'color', id: it.color_id, etiqueta: color ? (color.codigo + ' — ' + (color.nombre || color.codigo)) : 'Color eliminado', cantidad: it.cantidad };
   });
 }
 
@@ -98,7 +100,7 @@ function tarjetaPack(p) {
     : '<span class="sin-imagen">' + ic('box', 26) + '</span>';
   return '<button class="color-card' + (bool(p.activo) ? '' : ' inactivo') + '" onclick="editarPack(' + p.id + ')">' +
     '<div class="color-card-media">' +
-      '<span class="color-card-num">' + plural(items.length, 'color') + '</span>' +
+      '<span class="color-card-num">' + plural(items.length, 'ítem') + '</span>' +
       media +
     '</div>' +
     '<div class="color-card-pie">' +
@@ -166,26 +168,34 @@ async function subirArchivoPack(archivo) {
 }
 function quitarImagenPack() { _imgPackActual = ''; repintarSubeimgPack(); }
 
-/* ── Elegir qué colores lleva el pack ────────────────────────
-   Un desplegable con todos los colores (código — nombre) + una
-   cantidad + "Agregar": arma una lista chica abajo, cada renglón
-   con su cantidad y un botón para sacarlo. */
-function opcionesColorParaPack() {
-  return _colores.slice().sort(function (a, b) { return a.codigo.localeCompare(b.codigo, 'es', { numeric: true }); });
+/* ── Elegir qué lleva el pack ─────────────────────────────────
+   Un desplegable con todos los colores (código — nombre) Y los
+   productos simples (cremas, colágeno) + una cantidad + "Agregar":
+   arma una lista chica abajo, cada renglón con su cantidad y un
+   botón para sacarlo. Un pack puede mezclar de todo. */
+function opcionesItemsParaPack() {
+  var colores = _colores.slice().sort(function (a, b) { return a.codigo.localeCompare(b.codigo, 'es', { numeric: true }); })
+    .map(function (c) { return { tipo: 'color', id: c.id, etiqueta: c.codigo + ' — ' + (c.nombre || c.codigo) }; });
+  var productos = _productos.slice().sort(function (a, b) { return (a.nombre || '').localeCompare(b.nombre || '', 'es'); })
+    .map(function (p) { return { tipo: 'producto', id: p.id, etiqueta: p.nombre }; });
+  return { colores: colores, productos: productos };
 }
 
 function selectorItemsPackHTML() {
-  var opciones = opcionesColorParaPack();
-  return '<div class="campo"><div class="campo-etiq">Colores del pack</div>' +
+  var op = opcionesItemsParaPack();
+  return '<div class="campo"><div class="campo-etiq">Qué lleva el pack</div>' +
     '<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">' +
       '<div style="flex:1;min-width:180px">' +
-        '<select class="campo-input" id="pack-color-elegir">' +
-          opciones.map(function (c) {
-            return '<option value="' + c.id + '">' + esc(c.codigo) + ' — ' + esc(c.nombre || c.codigo) + '</option>';
-          }).join('') +
+        '<select class="campo-input" id="pack-item-elegir">' +
+          (op.colores.length ? '<optgroup label="Esmaltes y semipermanentes">' +
+            op.colores.map(function (o) { return '<option value="color-' + o.id + '">' + esc(o.etiqueta) + '</option>'; }).join('') +
+          '</optgroup>' : '') +
+          (op.productos.length ? '<optgroup label="Cremas y colágeno">' +
+            op.productos.map(function (o) { return '<option value="producto-' + o.id + '">' + esc(o.etiqueta) + '</option>'; }).join('') +
+          '</optgroup>' : '') +
         '</select>' +
       '</div>' +
-      '<input class="campo-input" id="pack-color-cant" type="number" inputmode="numeric" min="1" step="1" value="1" style="max-width:80px"/>' +
+      '<input class="campo-input" id="pack-item-cant" type="number" inputmode="numeric" min="1" step="1" value="1" style="max-width:80px"/>' +
       '<button type="button" class="btn btn-secundario" onclick="agregarItemPack()">' + ic('plus', 15) + ' Agregar</button>' +
     '</div>' +
     '<div id="pack-items-lista" style="margin-top:10px">' + itemsPackListaHTML() + '</div>' +
@@ -194,11 +204,11 @@ function selectorItemsPackHTML() {
 
 function itemsPackListaHTML() {
   if (!_packItemsActuales.length) {
-    return '<p class="campo-ayuda" style="margin:0">Todavía no agregaste ningún color.</p>';
+    return '<p class="campo-ayuda" style="margin:0">Todavía no agregaste nada.</p>';
   }
   return '<div class="lista">' + _packItemsActuales.map(function (it, i) {
     return '<div class="pack-item-row">' +
-      '<span>' + esc(it.codigo) + ' — ' + esc(it.nombre) + '</span>' +
+      '<span>' + esc(it.etiqueta) + '</span>' +
       '<span class="campo-ayuda" style="margin:0">x' + it.cantidad + '</span>' +
       '<button type="button" class="btn btn-fantasma" style="padding:4px 6px" onclick="quitarItemPack(' + i + ')" aria-label="Quitar">' + ic('x', 14) + '</button>' +
     '</div>';
@@ -206,17 +216,26 @@ function itemsPackListaHTML() {
 }
 
 function agregarItemPack() {
-  var sel = porId('pack-color-elegir');
-  var cantInput = porId('pack-color-cant');
+  var sel = porId('pack-item-elegir');
+  var cantInput = porId('pack-item-cant');
   if (!sel || !sel.value) return;
-  var colorId = +sel.value;
+  var partes = sel.value.split('-');
+  var tipo = partes[0], id = +partes[1];
   var cantidad = Math.max(1, +cantInput.value || 1);
-  var color = _colores.find(function (c) { return c.id === colorId; });
-  if (!color) return;
+  var etiqueta;
+  if (tipo === 'producto') {
+    var prod = _productos.find(function (p) { return p.id === id; });
+    if (!prod) return;
+    etiqueta = prod.nombre;
+  } else {
+    var color = _colores.find(function (c) { return c.id === id; });
+    if (!color) return;
+    etiqueta = color.codigo + ' — ' + (color.nombre || color.codigo);
+  }
 
-  var existente = _packItemsActuales.find(function (it) { return it.color_id === colorId; });
+  var existente = _packItemsActuales.find(function (it) { return it.tipo === tipo && it.id === id; });
   if (existente) existente.cantidad = cantidad;
-  else _packItemsActuales.push({ color_id: colorId, codigo: color.codigo, nombre: color.nombre || color.codigo, cantidad: cantidad });
+  else _packItemsActuales.push({ tipo: tipo, id: id, etiqueta: etiqueta, cantidad: cantidad });
 
   var lista = porId('pack-items-lista');
   if (lista) lista.innerHTML = itemsPackListaHTML();
@@ -232,12 +251,10 @@ function abrirFormPack(p) {
   var esNuevo = !p;
   p = p || { nombre: '', descripcion: '', imagen_url: '', precio: '', activo: true };
   _imgPackActual = p.imagen_url || '';
-  _packItemsActuales = esNuevo ? [] : itemsDePack(p.id).map(function (it) {
-    return { color_id: it.color_id, codigo: it.codigo, nombre: it.nombre, cantidad: it.cantidad };
-  });
+  _packItemsActuales = esNuevo ? [] : itemsDePack(p.id);
 
-  if (!_colores.length) {
-    toast('Cargá algún esmalte antes de armar un pack', 'error');
+  if (!_colores.length && !_productos.length) {
+    toast('Cargá algún esmalte o producto antes de armar un pack', 'error');
     return;
   }
 
@@ -275,7 +292,7 @@ async function guardarPack(id) {
   var precio = +porId('pack-precio').value || 0;
 
   if (!nombre) { toast('Falta el nombre', 'error'); return; }
-  if (!_packItemsActuales.length) { toast('Agregá al menos un color al pack', 'error'); return; }
+  if (!_packItemsActuales.length) { toast('Agregá al menos un color o producto al pack', 'error'); return; }
 
   var datos = { nombre: nombre, activo: activo, imagen_url: imagen_url, descripcion: descripcion, precio: precio };
 
@@ -290,13 +307,17 @@ async function guardarPack(id) {
     }
     for (var i = 0; i < _packItemsActuales.length; i++) {
       var it = _packItemsActuales[i];
-      await crear('pack_items', { pack_id: packId, color_id: it.color_id, cantidad: it.cantidad });
+      await crear('pack_items', {
+        pack_id: packId, cantidad: it.cantidad, tipo_item: it.tipo,
+        color_id: it.tipo === 'color' ? it.id : null,
+        producto_id: it.tipo === 'producto' ? it.id : null
+      });
     }
     cerrarModal();
     toast('Pack guardado');
     var r = await Promise.all([traerCacheado('packs'), traerCacheado('pack_items')]);
     _packs = r[0]; _packItems = r[1];
-    dibujarPacks();
+    pintarProductosUnificado();
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -315,6 +336,6 @@ async function borrarPack(id) {
     toast('Pack eliminado');
     var r = await Promise.all([traerCacheado('packs'), traerCacheado('pack_items')]);
     _packs = r[0]; _packItems = r[1];
-    dibujarPacks();
+    pintarProductosUnificado();
   } catch (e) { toast(e.message, 'error'); }
 }

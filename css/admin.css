@@ -273,13 +273,14 @@ textarea.campo-input{resize:none;overflow:hidden;min-height:74px;line-height:1.5
 
 .color-card-media{
   position:relative;aspect-ratio:1/1.05;background:var(--subtle);overflow:hidden;
-  display:flex;align-items:center;justify-content:center;padding:14px;
+  display:flex;align-items:center;justify-content:center;
 }
-/* width/height:100% (no solo max-*) para que una foto de cualquier
-   tamaño real quede siempre encerrada en la ficha, nunca más
-   grande que su caja — object-fit se encarga de que no se
-   deforme ni se recorte. */
-.color-card-media img{width:100%;height:100%;object-fit:contain;display:block}
+/* object-fit:cover (no "contain") a propósito: la ficha se llena
+   por completo, sin bordes vacíos a los costados ni la foto
+   achicada — a cambio recorta lo que sobre del encuadre. width/
+   height:100% + overflow:hidden en el padre garantizan que la foto
+   nunca se salga de su caja, sea cual sea su tamaño real. */
+.color-card-media img{width:100%;height:100%;object-fit:cover;display:block}
 .color-card-media img.rota{display:none}
 .color-card-media .sin-imagen{color:var(--muted)}
 
@@ -311,22 +312,29 @@ html[data-tema="oscuro"] .color-card-num{background:rgba(0,0,0,.35)}
 .color-card-precio .oferta{color:var(--rose);font-weight:700}
 
 /* ── Pestañas de tipo dentro de "Productos" ───────────────────
-   Esmaltes / Semipermanentes / Cremas y colágeno / Packs, todo
-   junto con un filtro arriba en vez de un menú por tipo — mismo
-   lenguaje visual que la barra de navegación de arriba, pero
-   dentro de la página, así se nota que es un sub-filtro y no otra
-   sección. */
+   Esmaltes / Semipermanentes / Cremas y colágeno / Packs: son
+   FILTROS (podés tildar varias, o ninguna para ver todo junto en
+   la misma grilla), no un menú que tapa el resto. En el celular no
+   se desliza hacia los costados: las 4 entran siempre en un mismo
+   renglón, con el rótulo abreviado si hace falta. */
 .tipo-tabs{
   display:flex;gap:4px;background:var(--subtle);border:1px solid var(--border);border-radius:30px;
-  padding:3px;margin-bottom:18px;overflow-x:auto;max-width:100%;
+  padding:3px;margin-bottom:18px;max-width:100%;
 }
 .tipo-tab{
-  display:flex;align-items:center;gap:6px;padding:8px 15px;border-radius:24px;white-space:nowrap;
-  font-size:12.5px;font-weight:600;color:var(--text2);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 15px;border-radius:24px;white-space:nowrap;
+  font-size:12.5px;font-weight:600;color:var(--text2);flex:1;
 }
 .tipo-tab:hover{color:var(--rose)}
 .tipo-tab.activo{background:var(--bg);color:var(--rose);box-shadow:var(--sombra)}
-@media (max-width:640px){ .tipo-tabs{width:100%} }
+.tipo-tab-corta{display:none}
+
+@media (max-width:640px){
+  .tipo-tabs{width:100%;gap:2px;padding:3px}
+  .tipo-tab{padding:7px 2px;font-size:9.5px;gap:3px}
+  .tipo-tab-full{display:none}
+  .tipo-tab-corta{display:inline}
+}
 
 /* ── Renglones de "qué colores lleva este pack" ───────────────*/
 .pack-item-row{
