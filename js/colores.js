@@ -240,11 +240,19 @@ function tarjetaColor(c) {
   '</button>';
 }
 
+/* Antes esto dejaba el mismo ícono "sin imagen" tanto si nunca se
+   cargó una foto como si había una foto que no llegó a bajar (link
+   roto, se borró del bucket, etc.) — se veían IGUAL, así que no
+   había forma de saber cuál de los dos pasaba con solo mirar la
+   ficha. Ahora el segundo caso se marca aparte, en rojo, con la
+   URL que falló en el título (pasando el mouse por arriba) para
+   poder diagnosticarlo. */
 function imagenRota(img) {
   img.classList.add('rota');
   var span = document.createElement('span');
-  span.className = 'sin-imagen';
-  span.innerHTML = ic('image', 26);
+  span.className = 'sin-imagen sin-imagen-error';
+  span.title = 'No se pudo cargar la foto:\n' + img.src;
+  span.innerHTML = ic('alert', 26);
   img.insertAdjacentElement('afterend', span);
 }
 

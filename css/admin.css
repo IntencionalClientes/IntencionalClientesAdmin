@@ -283,6 +283,11 @@ textarea.campo-input{resize:none;overflow:hidden;min-height:74px;line-height:1.5
 .color-card-media img{width:100%;height:100%;object-fit:cover;display:block}
 .color-card-media img.rota{display:none}
 .color-card-media .sin-imagen{color:var(--muted)}
+/* Distingue "todavía no se subió ninguna foto" (ícono neutro,
+   arriba) de "había una foto pero no cargó" (roja, con la URL en
+   el título) — antes se veían idénticas y no había forma de saber
+   cuál pasaba con solo mirar la ficha. */
+.color-card-media .sin-imagen-error{color:var(--danger,#dc2626)}
 
 .color-card-num{
   position:absolute;top:9px;left:11px;font-family:var(--acento);font-size:9px;font-weight:700;
@@ -326,7 +331,12 @@ html[data-tema="oscuro"] .color-card-num{background:rgba(0,0,0,.35)}
   font-size:12.5px;font-weight:600;color:var(--text2);flex:1;
 }
 .tipo-tab:hover{color:var(--rose)}
-.tipo-tab.activo{background:var(--bg);color:var(--rose);box-shadow:var(--sombra)}
+/* background:var(--bg) + box-shadow se veía bien en el catálogo
+   claro, pero en modo oscuro --bg y --subtle son casi el mismo
+   tono y la sombra no se nota — quedaba "activo" y "no activo"
+   iguales. Un relleno sólido de color marca se distingue en los
+   dos modos sin depender del contraste entre esos dos tokens. */
+.tipo-tab.activo{background:var(--rose);color:var(--bg);box-shadow:var(--sombra)}
 .tipo-tab-corta{display:none}
 
 @media (max-width:640px){
