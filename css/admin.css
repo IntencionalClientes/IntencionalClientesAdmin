@@ -293,7 +293,14 @@ textarea.campo-input{resize:none;overflow:hidden;min-height:74px;line-height:1.5
   position:absolute;top:9px;left:11px;font-family:var(--acento);font-size:9px;font-weight:700;
   letter-spacing:1px;color:var(--muted);background:rgba(255,255,255,.55);padding:2px 6px;border-radius:20px;
 }
-html[data-tema="oscuro"] .color-card-num{background:rgba(0,0,0,.35)}
+/* En oscuro, "muted" (un marrón/tostado) queda casi invisible
+   sobre el fondo casi negro de la píldora y encima de fotos con
+   zonas oscuras (el pomo del esmalte, por ejemplo) — se cambia
+   también el color del texto, no solo el fondo. */
+html[data-tema="oscuro"] .color-card-num{background:rgba(0,0,0,.45);color:var(--text)}
+@media (prefers-color-scheme:dark){
+  html[data-tema="auto"] .color-card-num{background:rgba(0,0,0,.45);color:var(--text)}
+}
 .color-card-oferta{
   position:absolute;top:8px;right:8px;background:var(--rose);color:#fff;font-family:var(--acento);
   font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:20px;
@@ -306,9 +313,18 @@ html[data-tema="oscuro"] .color-card-num{background:rgba(0,0,0,.35)}
 }
 
 .color-card-pie{padding:12px 13px 14px;border-top:1px solid var(--border);text-align:center}
+/* El círculo se monta a propósito sobre la línea que separa la
+   foto de la ficha (margin-top negativo) — pero como la foto vive
+   en .color-card-media, que es position:relative, esa capa se
+   pinta POR ENCIMA de .color-card-pie (que es position:static)
+   pase lo que pase con el orden en el HTML: los elementos con
+   posición ganan a los que no la tienen. Sin esto, la mitad de
+   arriba del círculo quedaba tapada por la foto — se veía
+   "cortado" justo en la línea. Con position+z-index acá alcanza
+   para que se pinte encima de la foto, entero. */
 .color-card-swatch{
   display:block;width:22px;height:22px;border-radius:50%;margin:-27px auto 8px;box-shadow:0 0 0 3px var(--bg),0 1px 4px rgba(0,0,0,.2);
-  border:1px solid rgba(0,0,0,.08);
+  border:1px solid rgba(0,0,0,.08);position:relative;z-index:2;
 }
 .color-card-nombre{font-family:var(--display);font-size:15.5px;line-height:1.2;margin-bottom:2px}
 .color-card-codigo{font-family:var(--acento);font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--rose)}
@@ -329,6 +345,11 @@ html[data-tema="oscuro"] .color-card-num{background:rgba(0,0,0,.35)}
 .tipo-tab{
   display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 15px;border-radius:24px;white-space:nowrap;
   font-size:12.5px;font-weight:600;color:var(--text2);flex:1;
+  /* Es un <button> — sin esto el navegador le mete su propio
+     relleno y borde de control nativo (gris, con marco), sobre
+     todo visible en modo oscuro: se veían como botones de sistema
+     en vez de como pestañas. */
+  background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .tipo-tab:hover{color:var(--rose)}
 /* background:var(--bg) + box-shadow se veía bien en el catálogo
